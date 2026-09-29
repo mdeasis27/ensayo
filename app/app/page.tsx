@@ -1,31 +1,81 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Alert } from "@/design-system/components/alert";
 import { Card } from "@/design-system/components/card";
 import { MetricCard } from "@/design-system/components/metric-card";
 import { StatusBadge } from "@/design-system/components/status-badge";
-import { getAlpha, getBenchmark, getExperiments } from "@/lib/ensayo/demo";
+import { welchTTest } from "@/lib/ensayo/statistics";
+import type { TTest } from "@/lib/ensayo/statistics";
+import { decide } from "@/lib/ensayo/analyze";
+import { getAlpha, getBenchmark } from "@/lib/ensayo/demo";
+import type { Decision } from "@/lib/ensayo/types";
 
 const BENCH = getBenchmark();
 const ALPHA = getAlpha();
-const EXPERIMENTS = getExperiments();
 
-const DECISION_LABEL: Record<string, string> = {
+const DECISION_LABEL: Record<Decision, string> = {
   advance: "avanza",
   rollback: "revierte",
   hold: "mantiene",
 };
 
-const DECISION_TONE: Record<string, "success" | "danger" | "warning"> = {
+const DECISION_TONE: Record<Decision, "success" | "danger" | "warning"> = {
   advance: "success",
   rollback: "danger",
   hold: "warning",
 };
 
+const INPUT_CLASS =
+  "rounded-[var(--radius-md)] border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/60";
+
+type Result =
+  | { kind: "ok"; test: TTest; decision: Decision; alpha: number }
+  | { kind: "error"; message: string };
+
+function parseScores(s: string): number[] | null {
+  const parts = s
+    .split(",")
+    .map((x) => x.trim())
+    .filter((x) => x !== "");
+  if (parts.length === 0) return null;
+  const nums = parts.map(Number);
+  if (nums.some((n) => Number.isNaN(n))) return null;
+  return nums;
+}
+
 export default function AppPage() {
   const exp1 = BENCH.experiments.find((e) => e.id === "exp-1")!;
   const lift1 = (exp1.delta / exp1.baselineMean) * 100;
+
+  const [baseline, setBaseline] = useState("0.66,0.71,0.69,0.78,0.73,0.82,0.64,0.75");
+  const [variant, setVariant] = useState("0.78,0.85,0.81,0.88,0.80,0.90,0.76,0.84");
+  const [alpha, setAlpha] = useState("0.05");
+  const [result, setResult] = useState<Result | null>(null);
+
+  function run() {
+    const b = parseScores(baseline);
+    const v = parseScores(variant);
+    const a = Number(alpha);
+
+    if (!b || b.length < 2) {
+      setResult({ kind: "error", message: "Los scores del baseline deben ser al menos 2 números separados por comas." });
+      return;
+    }
+    if (!v || v.length < 2) {
+      setResult({ kind: "error", message: "Los scores de la variante deben ser al menos 2 números separados por comas." });
+      return;
+    }
+    if (Number.isNaN(a) || a <= 0 || a >= 1) {
+      setResult({ kind: "error", message: "Alpha debe ser un número entre 0 y 1 (p. ej. 0.05)." });
+      return;
+    }
+
+    const test = welchTTest(b, v, a);
+    const decision = decide(test.delta, test.pValue, a);
+    setResult({ kind: "ok", test, decision, alpha: a });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,70 +141,108 @@ export default function AppPage() {
           />
         </div>
 
-        {/* ── EXPERIMENTS ─────────────────────── */}
+        {/* ── T-TEST PLAYGROUND ───────────────── */}
         <section>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">Rollout gate</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">t-test en vivo</h2>
           <p className="text-sm text-muted-foreground mb-5">
-            Dos experimentos con el mismo baseline. Uno avanza (la variante es significativamente
-            mejor) y otro se mantiene (el IC cruza el 0: no hay evidencia). La misma matemática —
-            Welch&apos;s t-test con p-value e IC exactos — corre en TS y Python, pinada por
-            fixtures.
+            Pega los scores de dos versiones del prompt (separados por comas) y ejecuta el
+            Welch&apos;s t-test. El rollout solo avanza cuando la evidencia es significativa —
+            una media más alta puede ser ruido de muestreo.
           </p>
-          <div className="space-y-5">
-            {BENCH.experiments.map((e) => {
-              const exp = EXPERIMENTS.find((x) => x.id === e.id)!;
-              const lift = (e.delta / e.baselineMean) * 100;
-              return (
-                <Card key={e.id} className="p-5">
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div>
-                      <h3 className="font-semibold text-foreground">{e.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {exp.baseline.version} → {exp.variant.version}
-                      </p>
-                    </div>
-                    <StatusBadge tone={DECISION_TONE[e.decision]} dot>
-                      {DECISION_LABEL[e.decision]}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card className="p-4">
+              <span className="mb-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                Baseline (v1)
+              </span>
+              <textarea
+                value={baseline}
+                onChange={(e) => setBaseline(e.target.value)}
+                rows={4}
+                className={`${INPUT_CLASS} w-full font-mono`}
+              />
+            </Card>
+            <Card className="p-4">
+              <span className="mb-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                Variante (v2)
+              </span>
+              <textarea
+                value={variant}
+                onChange={(e) => setVariant(e.target.value)}
+                rows={4}
+                className={`${INPUT_CLASS} w-full font-mono`}
+              />
+            </Card>
+          </div>
+
+          <Card className="mt-4 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-foreground">Alpha (nivel de significancia)</span>
+              <input
+                type="number"
+                step={0.01}
+                min={0}
+                max={1}
+                value={alpha}
+                onChange={(e) => setAlpha(e.target.value)}
+                className={`${INPUT_CLASS} w-24`}
+              />
+            </div>
+            <button
+              onClick={run}
+              className="mt-2 w-full rounded-[var(--radius-md)] bg-accent px-4 py-2.5 text-sm font-medium text-[#ffffff] hover:bg-accent/90 transition-colors"
+            >
+              Ejecutar t-test
+            </button>
+          </Card>
+
+          {result && (
+            <Card className="mt-4 p-5">
+              {result.kind === "ok" ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <StatusBadge tone={DECISION_TONE[result.decision]} dot>
+                      {DECISION_LABEL[result.decision]}
                     </StatusBadge>
+                    <span className="text-sm text-muted-foreground">
+                      α = {result.alpha}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-4">
+                  <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">Media v1</p>
-                      <p className="font-semibold tabular-nums text-foreground">{e.baselineMean.toFixed(3)}</p>
+                      <p className="font-semibold tabular-nums text-foreground">{result.test.baselineMean.toFixed(3)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">Media v2</p>
-                      <p className="font-semibold tabular-nums text-foreground">{e.variantMean.toFixed(3)}</p>
+                      <p className="font-semibold tabular-nums text-foreground">{result.test.variantMean.toFixed(3)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Δ / lift</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Δ (delta)</p>
                       <p className="font-semibold tabular-nums text-foreground">
-                        {e.delta >= 0 ? "+" : ""}{e.delta.toFixed(3)} ({lift >= 0 ? "+" : ""}{lift.toFixed(1)}%)
+                        {result.test.delta >= 0 ? "+" : ""}
+                        {result.test.delta.toFixed(3)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">p-value</p>
                       <p className="font-semibold tabular-nums text-foreground">
-                        {e.pValue < 0.001 ? "< 0.001" : e.pValue.toFixed(3)}
+                        {result.test.pValue < 0.001 ? "< 0.001" : result.test.pValue.toFixed(3)}
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <p>
-                      t = {e.t.toFixed(3)} · df = {e.df.toFixed(2)} · IC 95% = [{e.ciLow.toFixed(3)}, {e.ciHigh.toFixed(3)}]
-                    </p>
-                    <p>
-                      {e.significant
-                        ? e.delta > 0
-                          ? "Diferencia significativa: la variante es mejor."
-                          : "Diferencia significativa: la variante es peor."
-                        : "Sin evidencia suficiente: el IC incluye el 0."}
-                    </p>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    t = {result.test.t.toFixed(3)} · df = {result.test.df.toFixed(2)} · IC 95% = [
+                    {result.test.ciLow.toFixed(3)}, {result.test.ciHigh.toFixed(3)}]
+                  </p>
+                </>
+              ) : (
+                <Alert tone="danger" title="No se pudo ejecutar el test">
+                  {result.message}
+                </Alert>
+              )}
+            </Card>
+          )}
         </section>
 
         {/* ── METHOD NOTE ─────────────────────── */}
