@@ -1,0 +1,53 @@
+{
+  "repository": "ensayo",
+  "scope": "Real React component with controlled locale; Next routes not tested.",
+  "checks": [
+    {
+      "locale": "en",
+      "scenarios": [
+        {
+          "preset": "Clear lift\nThe gate can advance",
+          "outcome": "Advance the change\n\nΔ 0.496, p 0.0000; the local gate is advance."
+        },
+        {
+          "preset": "Uncertain lift\nThe gate holds",
+          "outcome": "Hold the change\n\nΔ 0.000, p 1.0000; the local gate is hold."
+        }
+      ],
+      "localizedValidationError": "Provide finite score samples and an alpha between 0 and 1.",
+      "mobileNoOverflow": true,
+      "reducedMotion": true,
+      "keyboard": true,
+      "noRequests": true,
+      "sceneChangesWithScenario": true,
+      "editingClearsPresetAndTrace": true,
+      "resetRestoresFirstPreset": true,
+      "cancelControlPresent": true,
+      "presetRestoresAllInputs": true
+    },
+    {
+      "locale": "es",
+      "scenarios": [
+        {
+          "preset": "Lift claro\nLa compuerta puede avanzar",
+          "outcome": "Avanza el cambio\n\nΔ 0.496, p 0.0000; la compuerta local indica avanzar."
+        },
+        {
+          "preset": "Lift incierto\nLa compuerta mantiene",
+          "outcome": "Mantén el cambio\n\nΔ 0.000, p 1.0000; la compuerta local indica mantener."
+        }
+      ],
+      "localizedValidationError": "Introduce al menos dos puntuaciones finitas por muestra y un alfa entre 0 y 1.",
+      "mobileNoOverflow": true,
+      "reducedMotion": true,
+      "keyboard": true,
+      "noRequests": true,
+      "sceneChangesWithScenario": true,
+      "editingClearsPresetAndTrace": true,
+      "resetRestoresFirstPreset": true,
+      "cancelControlPresent": true,
+      "presetRestoresAllInputs": true
+    }
+  ],
+  "errors": []
+}
