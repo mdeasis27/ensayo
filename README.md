@@ -1,81 +1,95 @@
-# Ensayo
+# Release evidence
 
-**Prompt versioning + A/B testing** — prompts as versioned artifacts, a deterministic judge, and
-a real statistical test (Welch's t-test) that gates the rollout.
+[Español](README.es.md) · [Try the demo](https://ensayo-manueldeasis27-2515s-projects.vercel.app/en/app) · [Case study](https://manueldeasis.com/en/projects/ensayo) · [Source](https://github.com/mdeasis27/ensayo)
 
-> **Result:** the few-shot + chain-of-thought variant lifts quality **+15.0%** (0.727 → 0.836)
-> with **p < 0.001** and a 95% CI of **[0.081, 0.137]** that never crosses zero — so it
-> **advances**. A pure paraphrase of the system prompt shows **+1.9%** with **p = 0.293** and a
-> CI of **[-0.013, 0.041]** — so it **holds**. Rollout only moves on evidence, not on vibes.
+![Actual interactive local interface](docs/images/cover.png)
 
----
+Edit score samples and significance level to compare lift and confidence intervals.
 
-## Result
+## Two situations to compare
 
-| Experiment | v1 mean | variant mean | Δ (lift) | p-value | 95% CI | Decision |
-|---|---|---|---|---|---|---|
-| Few-shot + chain-of-thought | 0.727 | 0.836 | +0.109 (+15.0%) | < 0.001 | [0.081, 0.137] | **advance** |
-| System-prompt paraphrase | 0.727 | 0.741 | +0.014 (+1.9%) | 0.293 | [-0.013, 0.041] | **hold** |
+**Clear lift:** Higher variant outcome The gate can advance.
 
-Two experiments, same baseline, opposite outcomes — the whole point is that the test
-discriminates signal from noise. A higher mean alone is not enough: the paraphrase looks
-slightly better but its confidence interval includes zero, so the gate refuses to ship it.
+![Clear lift](docs/images/scenario-a.png)
 
----
+**Uncertain lift:** Overlapping outcomes The gate holds.
+
+![Uncertain lift](docs/images/scenario-b.png)
+
+## Business use case
+
+A lift without uncertainty can lead to a premature release.
+
+**Who uses it:** Experiment owner.
+
+**The decision:** Advance, hold, or stop a change.
+
+Choose an experiment preset, calculate distributions and confidence interval, then read the gate.
+
+### Try the decision
+
+**Clear lift:** Higher variant outcome The gate can advance.
+
+**Uncertain lift:** Overlapping outcomes The gate holds.
+
+Choose a scenario, edit its controls and run the local computation. Step through the visual process or reveal all steps. Reset before comparing the second scenario.
+
+## How to try it
+
+Open `/en/app` (English, default) or `/es/app` (Spanish). Change the scenario inputs and run the computation. Inspect the resulting decision, evidence and computed trace. Playback reveals completed local steps; it does not measure a live model. Reset starts a new local scenario. Changing language resets the scenario.
+
+The primary demo needs no account, API key or database. Public links refer to the existing deployment; local redesign changes are pending publication.
+
+<!-- recruiter-mission:start -->
+### Your interactive mission
+
+Load the borderline-improvement samples, choose alpha before execution, optionally predict advance/hold/rollback, then analyze and reveal both gates.
+
+Compute a Welch test on identical samples at alpha 0.01 and 0.10. The observed difference is 0.15 and p is about 0.022 in this illustrative challenge: hold at 0.01 and advance at 0.10. The means and p-value remain fixed; confidence intervals and decisions change.
+
+**Why this approach:** Real local statistics separate observed improvement from uncertainty. Alpha must be chosen before observing results; this comparison is sensitivity analysis, not permission to choose the gate that passes.
+
+**Before production:** Predefine alpha and minimum useful effect; validate sampling, independence, sample size, multiple testing and user-impact guardrails. Statistical significance does not establish business value.
+
+Editing inputs, choosing a preset or resetting clears the prediction and obsolete results. Comparisons appear only at completed playback; the primary demos need no account or key.
+
+The mission pilot updates this implementation. Existing screenshots and browser reports document the previous stage; fresh browser interaction checks and captures are pending because the current environment blocked them.
+<!-- recruiter-mission:end -->
+
+## Local setup and verification
+
+Requires Node.js 22 and pnpm 10.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+pnpm test
+node node_modules/typescript/bin/tsc --noEmit --incremental false
+pnpm lint
+pnpm build
+```
+
+Open `http://localhost:3000/en/app`. Recorded validation covers tests, lint, TypeScript and production builds. See [command results](docs/quality/decision-lab-verification.json) and [browser component checks](docs/quality/decision-lab-browser.json). The new browser checks exercise real React components and production CSS with controlled locale navigation; they do not certify Next routes or public deployment.
 
 ## Architecture
 
-```
-lib/ensayo/                 # canonical core (TypeScript, tested)
-  statistics.ts             #   mean · variance · lgamma · incomplete beta · t CDF/quantile
-  analyze.ts                #   Welch t-test → significance + rollout decision
-  benchmark.ts              #   runs all experiments through the gate
-  demo.ts                   #   wires prompts + scores into every number
-  data/                     #   prompts.json (versions + committed judge scores)
-  fixtures/                 #   experiments.json (pinned t/p/CI + decision)
-backend/                    # same math in Python + pytest (authoritative)
-  src/ensayo/               #   statistics.py · benchmark.py
-  tests/                    #   pinned to tests/fixtures/{prompts,experiments}.json
-app/                        # Next.js landing + demo dashboard (Vercel, demo mode)
-```
+- `app/[lang]/`: localized browser experience.
+- `lib/experience/`: typed local adapter, validation and run traces.
+- `design-system/`: shared visual tokens, locale controls and execution/replay presentation.
+- `app/api/`: optional server integrations; the primary demo does not require them.
 
-The statistical core is dependency-free and mirrored line-for-line: `lgamma` (Lanczos),
-`betai` (regularized incomplete beta, Numerical Recipes), the Student t CDF and its inverse,
-and Welch's t-test with Satterthwaite degrees of freedom. Both languages produce the same
-numbers to ~1e-10, asserted against shared fixtures.
+Technology: Next.js 16, TypeScript, Python, Vitest, pytest, Tailwind CSS v4.
 
-## Design decisions & tradeoffs
+## Evidence and limitations
 
-1. **Welch's t-test, not a pooled t-test.** Prompt score variances are rarely equal across
-   versions; Welch doesn't assume them equal. The cost is slightly less power at equal
-   variance, which the demo accepts for correctness.
-2. **The judge is committed, deterministic score arrays.** A real LLM-as-judge is a non-
-   deterministic network call; the demo pins the scores so the *statistics* are the star.
-   Live mode swaps the judge behind the same `Experiment` shape.
-3. **Two-sided test with an explicit "hold".** One-sided tests can mask a regression as a
-   non-result. The gate has three outcomes — advance / rollback / hold — so a significantly
-   *worse* variant is caught too.
+Two distributions meet at a confidence gate.
 
-## What did not work
+Computed distributions and advance/hold decisions; invalid or insufficient samples are explained.
 
-- **Exact p-values need the full t distribution.** A normal approximation is easy but wrong in
-  the small-sample tail. Implementing `betai` by hand is the price of a correct p-value without
-  a dependency like SciPy, and it must be mirrored exactly in two languages.
-- **The synthetic judge scores are homoscedastic-ish.** Real judge scores have heavier tails and
-  occasional outliers; the demo's clean distributions isolate the *statistical* distinction
-  rather than the noisy real-world one.
+Connects uncertainty to a concrete release choice.
 
-## Run it
+**Limits:** Sample data is illustrative; Welch statistics are calculated locally. Undefined tests are rejected. These portfolio prototypes do not claim measured production impact.
 
-```bash
-# frontend demo + TS tests
-pnpm install && pnpm dev      # http://localhost:3000
-pnpm test                     # 12 vitest tests
+Inputs use fictional or anonymized examples. Optional live integrations require their own credentials and operational setup. Secrets belong in the configured secret manager, never in local secret files or Git. Use the existing `infisical run -- <command>` workflow when live integration is needed. This repository does not publish or deploy automatically as part of the local demo.
 
-# backend (authoritative math) — Python 3.12+
-cd backend && uv sync --extra dev && uv run pytest   # 3 tests, pinned fixtures
-```
-
-## Stack
-
-Next.js 16 · TypeScript · Vitest · Tailwind v4 · Python 3.13 · pytest
+![Actual English demo capture](docs/images/demo.png)
