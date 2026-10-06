@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import promptsRaw from "./data/prompts.json";
 import fixture from "./fixtures/experiments.json";
-import { decide } from "./analyze";
+import { analyze, decide } from "./analyze";
 import { benchmark } from "./benchmark";
 import type { Experiment } from "./types";
 
@@ -52,5 +52,19 @@ describe("pinned fixture: experiments", () => {
     expect(exp2.decision).toBe("hold");
     expect(exp2.ciLow).toBeLessThan(0);
     expect(exp2.ciHigh).toBeGreaterThan(0);
+  });
+});
+
+describe("synthetic taste panel exp-3", () => {
+  const exp3 = EXPERIMENTS.find((e) => e.id === "exp-3")!;
+  const first = (n: number) => analyze({ ...exp3, baseline: { ...exp3.baseline, scores: exp3.baseline.scores.slice(0, n) }, variant: { ...exp3.variant, scores: exp3.variant.scores.slice(0, n) } }, ALPHA).decision;
+
+  it("holds with up to 20 tasters and advances from 25", () => {
+    expect([5, 10, 15, 20].map(first)).toEqual(["hold", "hold", "hold", "hold"]);
+    expect([25, 30, 35, 40].map(first)).toEqual(["advance", "advance", "advance", "advance"]);
+  });
+
+  it("is pinned in the shared fixture", () => {
+    expect(fixture.experiments.map((e) => e.id)).toContain("exp-3");
   });
 });
