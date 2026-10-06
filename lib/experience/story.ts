@@ -1,7 +1,5 @@
 import type { Heading } from "@/design-system/demo/project-story";
 
-type NodeCopy = { name: string; sub: string; analogy: string };
-
 export interface EnsayoStory {
   name: string;
   oneLiner: string;
@@ -13,7 +11,7 @@ export interface EnsayoStory {
   fit: { heading: Heading; worthLabel: string; worth: string; notLabel: string; not: string };
   proves: { heading: Heading; text: string };
   engineers: { summary: string; points: string[]; repoLabel: string };
-  scene: { title: string; caption: string; statusLabels: { active: string; danger: string; success: string }; tapeLabel: string; nodes: { tasters: NodeCopy; test: NodeCopy; launch: NodeCopy; wait: NodeCopy }; tape: { served: string; rerouted: string; lost: string }; preferOf: (newer: number, n: number) => string };
+  scene: { title: string; caption: string; tape: { served: string; rerouted: string; lost: string }; jars: { served: string; rerouted: string; lost: string }; luck: string; luckNote: string; menuLabel: string; menuNew: string; menuOld: string; tasting: string; stampNotYet: string; stampApproved: string; tableLabel: (revealed: number, n: number) => string; preferOf: (newer: number, n: number) => string };
 }
 
 export const STORY: Record<"en" | "es", EnsayoStory> = {
@@ -43,7 +41,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       yes: "Yes, it launches",
       no: "No, not yet",
       tastersLabel: "Tasters",
-      note: "Each square is one taster. Green preferred the new recipe, red the old one, blue couldn't tell them apart.",
+      note: "Each seat is one taster. Green with a check preferred the new recipe, red with a cross the old one, blue with an equals sign couldn't tell them apart.",
       simulate: "Run it",
       cancel: "Cancel",
       reset: "Start over",
@@ -80,24 +78,26 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       points: [
         "Welch's t-test, two-sided, alpha 0.05. Launch needs p below alpha and a positive difference; a significant negative difference rolls back.",
         "The 40-taster panel is a fixed synthetic set added for this page. With the first 5 to 20 tasters the test holds; from 25 it approves.",
-        "The test is unpaired. Pairing taster i's two scores in the squares is for display only.",
+        "The test is unpaired. Pairing taster i's two scores at one seat is for display only.",
         "The statistics and all three experiments are pinned in a fixture shared by TypeScript and Python.",
         "Stack: Next.js 16, TypeScript, Python, Vitest, pytest.",
       ],
       repoLabel: "Source code",
     },
     scene: {
-      title: "What each taster preferred",
-      caption: "Watch the tasters vote five at a time.",
-      statusLabels: { active: "tasting", success: "in use", danger: "not proven" },
-      tapeLabel: "Tasters, in order",
-      nodes: {
-        tasters: { name: "Tasters", sub: "blind scores", analogy: "the panel" },
-        test: { name: "Test", sub: "95% confidence", analogy: "the blind test" },
-        launch: { name: "Launch", sub: "new recipe for all", analogy: "the new menu" },
-        wait: { name: "Wait", sub: "keep the old one", analogy: "more tasting" },
-      },
+      title: "The tasting table",
+      caption: "Each taster tries both dishes blind and leaves a token. Then the bar shows whether the gap could still be luck.",
       tape: { served: "preferred the new one", rerouted: "couldn't tell", lost: "preferred the old one" },
+      jars: { served: "New", rerouted: "Same", lost: "Old" },
+      luck: "Could it be luck?",
+      luckNote: "The test asks for 95% confidence.",
+      menuLabel: "Tomorrow's menu",
+      menuNew: "New recipe for everyone",
+      menuOld: "The old recipe stays",
+      tasting: "Still tasting",
+      stampNotYet: "Not yet",
+      stampApproved: "Approved",
+      tableLabel: (revealed, n) => `Tasting table: ${revealed} of ${n} tasters have voted.`,
       preferOf: (newer, n) => `Preferred the new recipe: ${newer} of ${n}`,
     },
   },
@@ -127,7 +127,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       yes: "Sí, se lanza",
       no: "No, todavía no",
       tastersLabel: "Catadores",
-      note: "Cada cuadrito es un catador. Verde prefirió la receta nueva, rojo la anterior y azul no notó diferencia.",
+      note: "Cada asiento es un catador. Verde con palomita prefirió la receta nueva, rojo con equis la anterior y azul con signo igual no notó diferencia.",
       simulate: "Correr",
       cancel: "Cancelar",
       reset: "Empezar de nuevo",
@@ -164,24 +164,26 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       points: [
         "Prueba t de Welch, de dos colas, alfa 0.05. Lanzar exige p menor que alfa y una diferencia positiva; una diferencia negativa significativa regresa a la versión anterior.",
         "El panel de 40 catadores es un conjunto sintético fijo creado para esta página. Con los primeros 5 a 20 catadores la prueba espera; desde 25 aprueba.",
-        "La prueba no es pareada. Emparejar las dos calificaciones del catador i en los cuadritos es solo para mostrarlo.",
+        "La prueba no es pareada. Emparejar las dos calificaciones del catador i en un asiento es solo para mostrarlo.",
         "La estadística y los tres experimentos los fija un fixture que comparten TypeScript y Python.",
         "Stack: Next.js 16, TypeScript, Python, Vitest, pytest.",
       ],
       repoLabel: "Código fuente",
     },
     scene: {
-      title: "Lo que prefirió cada catador",
-      caption: "Mira cómo votan los catadores de cinco en cinco.",
-      statusLabels: { active: "probando", success: "en uso", danger: "sin demostrar" },
-      tapeLabel: "Catadores, en orden",
-      nodes: {
-        tasters: { name: "Catadores", sub: "calificaciones a ciegas", analogy: "el panel" },
-        test: { name: "Prueba", sub: "95% de confianza", analogy: "la prueba a ciegas" },
-        launch: { name: "Lanzar", sub: "receta nueva para todos", analogy: "el menú nuevo" },
-        wait: { name: "Esperar", sub: "se queda la anterior", analogy: "seguir probando" },
-      },
+      title: "La mesa de cata",
+      caption: "Cada catador prueba los dos platos a ciegas y deja una ficha. Luego la barra muestra si la diferencia todavía puede ser suerte.",
       tape: { served: "prefirió la nueva", rerouted: "no notó diferencia", lost: "prefirió la anterior" },
+      jars: { served: "Nueva", rerouted: "Igual", lost: "Anterior" },
+      luck: "¿Puede ser suerte?",
+      luckNote: "La prueba pide 95% de confianza.",
+      menuLabel: "El menú de mañana",
+      menuNew: "Receta nueva para todos",
+      menuOld: "Se queda la receta anterior",
+      tasting: "Todavía probando",
+      stampNotYet: "Todavía no",
+      stampApproved: "Aprobada",
+      tableLabel: (revealed, n) => `Mesa de cata: ${revealed} de ${n} catadores ya votaron.`,
       preferOf: (newer, n) => `Prefirieron la receta nueva: ${newer} de ${n}`,
     },
   },

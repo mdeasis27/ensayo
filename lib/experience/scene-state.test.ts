@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { tapeCounts } from "@/design-system/demo/outcome-tape";
-import { tasterCells, revealedTasters } from "./scene-state";
+import { tasterCells, revealedTasters, evidenceFill } from "./scene-state";
 import { runMission } from "./mission";
 
 it("hides the tasters not revealed yet", () => {
@@ -17,4 +17,14 @@ it("reveals in proportion to playback, all of it when complete or under reduced 
   expect(revealedTasters({ visible: 4, total: 4, complete: true }, 12, false)).toBe(12);
   expect(revealedTasters({ visible: 1, total: 4, complete: false }, 12, true)).toBe(12);
   expect(revealedTasters({ visible: 0, total: 0, complete: false }, 12, false)).toBe(12);
+});
+
+it("fills the evidence bar with 1 - p, past the 95% line only when the run is approved", async () => {
+  expect(evidenceFill(0.28997)).toBeCloseTo(71.003);
+  expect(evidenceFill(0)).toBe(100);
+  expect(evidenceFill(1.2)).toBe(0);
+  for (const tasters of [10, 25]) {
+    const { result } = await runMission({ tasters }, new AbortController().signal, () => {});
+    expect(evidenceFill(result.pValue) > 95, `${tasters} tasters`).toBe(result.approved);
+  }
 });

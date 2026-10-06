@@ -13,3 +13,8 @@ export function revealedTasters(frame: { visible: number; total: number; complet
 }
 
 export const COMPLETE_FRAME: PlaybackFrame<TraceEvent> = { visible: 0, total: 0, event: undefined, complete: true };
+
+/** Width of the evidence bar in percent: 1 - p, a display simplification. The 95% line matches alpha 0.05. */
+export function evidenceFill(pValue: number): number {
+  return Math.min(100, Math.max(0, (1 - pValue) * 100));
+}
