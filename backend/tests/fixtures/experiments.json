@@ -26,6 +26,20 @@
       "ciHigh": 0.0410186596205101,
       "significant": false,
       "decision": "hold"
+    },
+    {
+      "id": "exp-3",
+      "name": "Synthetic taste panel (40 blind tasters)",
+      "baselineMean": 0.7282500000000003,
+      "variantMean": 0.7579999999999998,
+      "delta": 0.0297499999999995,
+      "t": 3.118015986851687,
+      "df": 77.70586652175429,
+      "pValue": 0.0025531981675952498,
+      "ciLow": 0.010753550985308263,
+      "ciHigh": 0.04874644901469073,
+      "significant": true,
+      "decision": "advance"
     }
   ]
 }
