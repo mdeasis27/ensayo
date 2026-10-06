@@ -30,7 +30,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       dictionaryLabel: "In the diagram below",
       dictionary: [
         { term: "the recipes", means: "two versions of the instructions" },
-        { term: "a taster", means: "one answer scored with both versions" },
+        { term: "a taster", means: "one score from each version, set side by side" },
         { term: "the blind test", means: "a statistical test on the scores" },
         { term: "launching", means: "switching everyone to the new version" },
       ],
@@ -38,7 +38,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
     why: { title: "Why I built it", text: "" },
     tryIt: {
       heading: { before: "Try", accent: "it" },
-      lead: "Forty tasters scored both recipes. You choose how many of them the decision waits for. The test asks for 95% confidence.",
+      lead: "Each recipe has forty scores, from two separate groups. You choose how many of them the decision waits for. The test asks for 95% confidence.",
       question: (n) => `Before you run it, place a bet: with ${n} ${n === 1 ? "taster" : "tasters"}, does the new recipe get approved?`,
       yes: "Yes, it launches",
       no: "No, not yet",
@@ -59,7 +59,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       notYet: "Not yet",
       ships: "Launches",
       staysOut: "Doesn't launch",
-      sentence: (newer, n) => `${newer} of ${n} tasters preferred the new recipe.`,
+      sentence: (newer, n) => `${newer} of ${n} ${n === 1 ? "taster" : "tasters"} preferred the new recipe.`,
       enough: "With that many, the difference no longer looks like luck.",
       notEnough: "With that few, the difference could still be luck, so the test waits.",
       verdict: (approved) => approved ? "The new recipe was approved" : "The new recipe was not approved yet",
@@ -114,7 +114,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       dictionaryLabel: "En el diagrama de abajo",
       dictionary: [
         { term: "las recetas", means: "dos versiones de las instrucciones" },
-        { term: "un catador", means: "una respuesta calificada con las dos versiones" },
+        { term: "un catador", means: "una calificación de cada versión, puestas lado a lado" },
         { term: "la prueba a ciegas", means: "una prueba estadística sobre las calificaciones" },
         { term: "lanzar", means: "pasar a todos a la versión nueva" },
       ],
@@ -122,7 +122,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
     why: { title: "Por qué lo hice", text: "" },
     tryIt: {
       heading: { accent: "Pruébalo" },
-      lead: "Cuarenta catadores calificaron las dos recetas. Tú eliges a cuántos espera la decisión. La prueba pide 95% de confianza.",
+      lead: "Cada receta tiene cuarenta calificaciones, de dos grupos distintos. Tú eliges a cuántos espera la decisión. La prueba pide 95% de confianza.",
       question: (n) => `Antes de correrlo, apuesta: con ${n} ${n === 1 ? "catador" : "catadores"}, ¿se aprueba la receta nueva?`,
       yes: "Sí, se lanza",
       no: "No, todavía no",
@@ -143,7 +143,7 @@ export const STORY: Record<"en" | "es", EnsayoStory> = {
       notYet: "Todavía no",
       ships: "Se lanza",
       staysOut: "No se lanza",
-      sentence: (newer, n) => `${newer} de ${n} catadores prefirieron la receta nueva.`,
+      sentence: (newer, n) => `${newer} de ${n} ${n === 1 ? "catador" : "catadores"} ${newer === 1 ? "prefirió" : "prefirieron"} la receta nueva.`,
       enough: "Con tantos, la diferencia ya no parece suerte.",
       notEnough: "Con tan pocos, la diferencia todavía puede ser suerte, así que la prueba espera.",
       verdict: (approved) => approved ? "La receta nueva se aprobó" : "La receta nueva todavía no se aprueba",
